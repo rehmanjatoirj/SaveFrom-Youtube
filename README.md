@@ -7,7 +7,7 @@ A modern, fast YouTube video downloader that supports MP4 (video) and MP3 (audio
 - **Multiple Formats**: Download as MP4 video or MP3 audio
 - **Quality Selection**: 360p, 480p, 720p, 1080p, and 4K where available
 - **Current download API**: Uses a Cobalt instance you operate or are authorized to use
-- **Handles Restricted Videos**: Works with age-gated, private (if accessible), and region-locked videos
+- **Clear error reporting**: Explains configuration and service failures without misleading fallbacks
 - **No Registration**: 100% free, no sign-up required
 - **Modern UI**: Dark theme with smooth animations
 - **Mobile Responsive**: Works perfectly on all devices

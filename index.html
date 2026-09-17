@@ -998,6 +998,7 @@ async function startDownload() {
     }
   } catch (e) {
     console.error('Download failed:', e);
+    const failureMessage = e instanceof Error ? e.message : 'The download service could not process this video.';
     
     // Try lower quality fallback for video
     if (selectedFmt !== 'audio' && selectedQ !== '360') {
@@ -1017,7 +1018,7 @@ async function startDownload() {
     }
 
     // All methods failed
-    showError('All download methods failed. This video may be restricted (age-gated, private, region-locked) or too long.', true, url);
+    showError(failureMessage, true, url);
   } finally {
     btn.disabled = false; btn.textContent = '⬇ Download';
   }
