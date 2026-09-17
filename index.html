@@ -875,7 +875,13 @@ document.getElementById('ytUrl').addEventListener('paste', () => {
 document.getElementById('ytUrl').addEventListener('keydown', e => { if (e.key === 'Enter') startDownload(); });
 
 /* ===== HELPERS ===== */
-function isYouTubeUrl(u) { return u && (u.includes('youtube.com') || u.includes('youtu.be')); }
+function isYouTubeUrl(value) {
+  try {
+    const url = new URL(value.trim());
+    const host = url.hostname.toLowerCase().replace(/^www\./, '');
+    return url.protocol === 'https:' && ['youtube.com', 'm.youtube.com', 'music.youtube.com', 'youtu.be'].includes(host);
+  } catch { return false; }
+}
 
 function extractVideoId(url) {
   try {
@@ -911,7 +917,7 @@ function showSuccess(dlUrl, label, ext, vidId) {
 function showError(msg, showAlt, url) {
   const altBtn = showAlt && url
     ? `<div style="margin-top:10px;">
-        <button onclick="tryAlternative('${escHtml(url)}')" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);border-radius:8px;color:#fff;font-size:0.82rem;padding:8px 16px;cursor:pointer;font-family:inherit;">
+        <button type="button" onclick="tryAlternative()" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);border-radius:8px;color:#fff;font-size:0.82rem;padding:8px 16px;cursor:pointer;font-family:inherit;">
           🔄 Try Alternative Method
         </button>
        </div>`
@@ -921,7 +927,7 @@ function showError(msg, showAlt, url) {
   ra.innerHTML = `<div class="status-msg status-error">⚠ ${escHtml(msg)}${altBtn}</div>`;
 }
 
-/* ===== METHOD 1: COBALT.TOOLS ===== */
+/* ===== DOWNLOAD API ===== */
 async function tryCobalt(url, quality, fmt) {
   const response = await fetch(`/api/download?url=${encodeURIComponent(url)}&format=${fmt}&quality=${quality}`);
   if (!response.ok) {
@@ -948,21 +954,10 @@ async function tryCobaltLower(url, fmt) {
   throw new Error('all_qualities_failed');
 }
 
-/* ===== ALTERNATIVE (Redirect to other services) ===== */
-function tryAlternative(url) {
-  const services = [
-    'https://ssyoutube.com',
-    'https://ytmp3.cc',
-    'https://y2mate.com'
-  ];
-  const service = services[Math.floor(Math.random() * services.length)];
-  const u = new URL(url);
-  let altUrl;
-  if (u.hostname.includes('youtu.be')) altUrl = service + u.pathname + u.search;
-  else altUrl = url.replace('youtube.com', service.replace('https://', ''));
-  window.open(altUrl, '_blank', 'noopener,noreferrer');
-  const ra = document.getElementById('result-area');
-  ra.innerHTML += `<div style="margin-top:8px;font-size:0.78rem;color:rgba(255,255,255,0.4);text-align:center;">Alternative site opened in new tab</div>`;
+/* The backend provides the only download path. Do not send visitors and their
+   video URLs to unaudited third-party downloader sites. */
+function tryAlternative() {
+  showError('Try again shortly, or contact the site owner if this continues.', false);
 }
 
 /* ===== MAIN FUNCTION ===== */
@@ -983,9 +978,10 @@ async function startDownload() {
     const backendUrl = `/api/download?url=${encodeURIComponent(url)}&format=${selectedFmt}&quality=${selectedQ}`;
     const result = await fetch(backendUrl, { 
       signal: AbortSignal.timeout(30000) 
-    }).then(r => {
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      return r.json();
+    }).then(async r => {
+      const body = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(body.message || body.error || `HTTP ${r.status}`);
+      return body;
     });
 
     if (result.error) {
@@ -1008,7 +1004,11 @@ async function startDownload() {
       try {
         setLoading('High quality unavailable, trying lower resolution…');
         const fallbackUrl = `/api/download?url=${encodeURIComponent(url)}&format=${selectedFmt}&quality=720`;
-        const result = await fetch(fallbackUrl).then(r => r.json());
+        const result = await fetch(fallbackUrl).then(async r => {
+          const body = await r.json().catch(() => ({}));
+          if (!r.ok) throw new Error(body.message || body.error || `HTTP ${r.status}`);
+          return body;
+        });
         if (result.url || result.type === 'redirect') {
           showDirectDownload(result.type === 'redirect' ? fallbackUrl : result.url, `${label} (720p)`, ext, vidId);
           return;

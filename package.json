@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "YouTube video downloader with backend API",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "vercel dev",
     "deploy": "vercel --prod"

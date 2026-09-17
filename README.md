@@ -6,7 +6,7 @@ A modern, fast YouTube video downloader that supports MP4 (video) and MP3 (audio
 
 - **Multiple Formats**: Download as MP4 video or MP3 audio
 - **Quality Selection**: 360p, 480p, 720p, 1080p, and 4K where available
-- **Multiple Fallback APIs**: 3 different backend methods ensure high success rate
+- **Current download API**: Uses a Cobalt instance you operate or are authorized to use
 - **Handles Restricted Videos**: Works with age-gated, private (if accessible), and region-locked videos
 - **No Registration**: 100% free, no sign-up required
 - **Modern UI**: Dark theme with smooth animations
@@ -21,21 +21,15 @@ A modern, fast YouTube video downloader that supports MP4 (video) and MP3 (audio
 
 **Backend (Serverless API):**
 - Node.js with Vercel Serverless Functions
-- Multiple API integrations:
-  - Cobalt API (primary)
-  - OpenUtils API (stream-based fallback)
-  - YT-Download.org (tertiary fallback)
+- Cobalt API connected to an instance you operate or are authorized to use
 
 ## How It Works
 
 1. User pastes YouTube URL
 2. Frontend sends request to backend API (`/api/download`)
-3. Backend tries multiple download methods sequentially:
-   - First: Cobalt API (direct download URL)
-   - Second: OpenUtils stream API (bypasses restrictions)
-   - Third: YT-Download.org (additional option)
-4. Backend returns download URL to frontend
-5. User clicks download button to save file
+3. Backend requests a download URL from the configured Cobalt instance
+4. Backend returns the download URL to the frontend
+5. User clicks download to save the file
 
 ## Local Development
 
@@ -44,7 +38,11 @@ A modern, fast YouTube video downloader that supports MP4 (video) and MP3 (audio
    ```bash
    npm install
    ```
-3. Start development server:
+3. Copy `.env.example` to `.env.local` and set `COBALT_API_URL`. Do not use the
+   retired public `api.cobalt.tools/api/json` endpoint: Cobalt requires an instance
+   you operate or whose owner has granted you API access. Set `COBALT_API_KEY` too
+   when that instance uses API-key authentication.
+4. Start development server:
    ```bash
    npm run dev
    ```
@@ -65,6 +63,10 @@ Vercel will automatically:
 - Install dependencies from `package.json`
 - Deploy both frontend and backend API
 - Provide a live URL (e.g., `https://your-project.vercel.app`)
+
+Before deploying, add `COBALT_API_URL` (and, if needed, `COBALT_API_KEY`) under
+**Project Settings → Environment Variables**. These values are server-only and
+must never be added to `index.html`.
 
 **Manual Deploy via CLI:**
 ```bash
